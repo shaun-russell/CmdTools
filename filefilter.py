@@ -6,23 +6,22 @@
 
 import click
 
-@click.group()
-def cli():
+@click.command()
+# required arguments
+@click.argument('output-file', type=click.File('w'), default='-', required=False)
+
+# optional arguments
+@click.option('--column-index', default=0, type=int,
+              help='Column index to use, default is 0.')
+@click.option('--column-name', default='',
+              help='Find index of column name in header.')
+
+# flags
+@click.option('--verbose', is_flag=True,
+              help='Enables information-dense terminal output.')
+@click.option('--ignore-case', is_flag=True,
+              help='Ignores letter case when searching and matching.')
+def cli(verbose, ignore_case):
+  ''' Documentation for process. '''
   pass
 
-@cli.command()
-@click.option('--mungo', default='',
-              help='Provide a mungo rank.')
-@click.option('--repeat', default=0, type=int,
-              help='How many mungo messages to show.')
-@click.argument('out', type=click.File('w'), default='-', required=False)
-def rat(mungo, repeat, out):
-  ''' This script is mungo-enabled. '''
-  click.echo('This is filefilter')
-  if mungo != '':
-    click.echo('Mungo was empowered to reach {} status.'.format(mungo))
-  if repeat > 0:
-    for x in range(0,repeat):
-      click.echo('Levelling...')
-    else:
-      click.echo('Empowered!')
