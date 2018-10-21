@@ -36,16 +36,21 @@ def get_values_to_match(values, file_flag, ignore_case):
   else:
     return match_values
 
-def get_column_index(col_idx, col_name, header, ignore_case, delim):
+def get_column_index(col_idx, col_name, header, ignore_case, delim, verbose):
   ''' Gets the index number of the column based on flags and provided arguments. ''' 
   # if no column name, use the index (default if also not given)
   if col_name == '':
+    if verbose: click.echo('Using numeric index.')
     return col_idx
   if ignore_case:
+    if verbose: click.echo('Ignoring case.')
     col_name = col_name.lower()
+    delim = delim.lower()
   # get the header index
+  if verbose: click.echo('Using string column name.')
   try:
     header = header.lower().split(delim) if ignore_case else header.split(delim)
+    if verbose: click.echo('Header: {}'.format(header))
     return header.index(col_name)
   except:
     click.echo('ERROR: Column not found in header.')
@@ -116,9 +121,12 @@ def cli(in_file, values, out_file,
     delimiter = ','
     if verbose:
       click.echo('Default delimiter TAB not found in header, using COMMA.')
+  # if delimiter is made of letters, needs to work when case-insensitive
+  if ignore_case:
+    delimiter = delimiter.lower()
 
   # get the column index depending on which argument options are provided
-  idx = get_column_index(column_index, column_name, header, ignore_case, delimiter)
+  idx = get_column_index(column_index, column_name, header, ignore_case, delimiter, verbose)
   if verbose:
     click.echo('Header: {}'.format(header.split(delimiter)))
     click.echo('Column index: {}'.format(idx))
@@ -129,6 +137,7 @@ def cli(in_file, values, out_file,
     # split line into columns (with lowercase if --ignore-case)
     columns = remove_newline(line).lower().split(delimiter) if ignore_case else remove_newline(line).split(delimiter)
     # try find a match with every value
+    if verbose: click.echo(columns)
     for value in match_values:
       # use the specified function to find matches
       if match_types[match](columns[idx], value):
