@@ -11,16 +11,13 @@ from functions import MatchTypes, remove_newline
 # used to tell Click that -h is shorthand for help
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
-
 # the types of value matching to use for finding columns to keep
 match_types = {'exact': MatchTypes.match_exact,
                'starts': MatchTypes.match_starts,
                'ends': MatchTypes.match_ends,
                'contains': MatchTypes.match_contains,
                'greater': MatchTypes.match_greater,
-               'less': MatchTypes.match_less,
-}
-
+               'less': MatchTypes.match_less}
 
 # individual functions go here
 def get_values_to_match(values, file_flag, ignore_case):
@@ -41,18 +38,20 @@ def get_values_to_match(values, file_flag, ignore_case):
 
 def get_column_index(col_idx, col_name, header, ignore_case, delim):
   ''' Gets the index number of the column based on flags and provided arguments. ''' 
+  # if no column name, use the index (default if also not given)
   if col_name == '':
     return col_idx
   if ignore_case:
     col_name = col_name.lower()
-  else:
-    try:
-      header = header.lower().split(delim) if ignore_case else header.split(delim)
-      return header.index(col_name)
-    except:
-      click.echo('ERROR: Column not found in header.')
-      exit()
+  # get the header index
+  try:
+    header = header.lower().split(delim) if ignore_case else header.split(delim)
+    return header.index(col_name)
+  except:
+    click.echo('ERROR: Column not found in header.')
+    exit()
 
+# START CLI COMMANDS
 @click.command(context_settings=CONTEXT_SETTINGS)
 # required arguments
 @click.argument('in-file', type=click.File('r'), required=True)
@@ -86,17 +85,25 @@ def get_column_index(col_idx, col_name, header, ignore_case, delim):
 def cli(in_file, values, out_file,
         column_index, column_name, match, delimiter,
         verbose, ignore_case, file_values):
-  ''' <Insert description of main process> 
-  VALUES must be a file path (each value on a new line) or comma-separated values
-  '''
+  ''' Filter lines in a file based on the values of a single column.\n
+  Supports a variety of string matching functions.\n
+  VALUES must be a file path (each value on a new line) or as a comma-separated
+  sequence of words.'''
   # first validate whether values are correct
   match_values = get_values_to_match(values, file_values, ignore_case)
 
   # parse the header for column indexes
-  header = in_file.readline()
+  header_line = in_file.readline()
+  header = header_line.strip()
 
   saved_lines = []
-  saved_lines.append(header+'\n')
+
+  # use DOS line endings
+  if '\r' in header_line:
+    saved_lines.append(header + '\r\n')
+  # standard unix endings
+  else:
+    saved_lines.append(header + '\n')
   # if header is default, but tab delimiter not found in header,
   # if the header has columns, assume it's a CSV
   if '\t' not in header and ',' in header and delimiter == '\t':
@@ -105,11 +112,11 @@ def cli(in_file, values, out_file,
       click.echo('Default delimiter TAB not found in header, using COMMA.')
 
   # get the column index depending on which argument options are provided
-  idx = get_column_index(column_index, column_name, header.strip(), ignore_case, delimiter)
+  idx = get_column_index(column_index, column_name, header, ignore_case, delimiter)
   if verbose:
-    click.echo('HEADER: {}'.format(header.split(delimiter)))
-    click.echo('COLUMN INDEX: {}'.format(idx))
-    click.echo('Matching rows containing: {}'.format(match_values))
+    click.echo('Header: {}'.format(header.split(delimiter)))
+    click.echo('Column index: {}'.format(idx))
+    click.echo('Match values: {}'.format(match_values))
 
   # because first line read as header, the file pointer is at the first data line
   for line in in_file:
@@ -117,12 +124,16 @@ def cli(in_file, values, out_file,
     columns = remove_newline(line).lower().split(delimiter) if ignore_case else remove_newline(line).split(delimiter)
     # try find a match with every value
     for value in match_values:
+      # use the specified function to find matches
       if match_types[match](columns[idx], value):
         saved_lines.append(line)
         break
   if verbose: click.echo('Saving...')
+
+  # write the matched lines to the output file
   for line in saved_lines:
     out_file.write(line)
   out_file.close()
 
-  if verbose: click.echo('Done')
+  # finished
+  if verbose: click.echo('Saved')
