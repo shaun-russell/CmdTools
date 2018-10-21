@@ -62,7 +62,7 @@ def get_column_index(col_idx, col_name, header, ignore_case, delim):
 @click.option('--delimiter', '-d', default='\t',
               help='Delimiter to use in the files. Default is TAB.')
 @click.option('--column-index', '-x', default=0, type=int,
-              help='Column index to use. Default is 0.')
+              help='Column index to use. Index is zero-based and default is 0.')
 @click.option('--column-name', '-n', default='',
               help='Find column by name. Takes precedence over --column-index.')
 @click.option('--match', '-m', default='exact',
@@ -74,6 +74,8 @@ def get_column_index(col_idx, col_name, header, ignore_case, delim):
               help='Read values as a file path.')
 @click.option('--ignore-case', '-i', is_flag=True,
               help='Ignores letter case when searching and matching.')
+@click.option('--no-header', '-e', is_flag=True,
+              help='Excludes the header from the output.')
 @click.option('--verbose', is_flag=True,
               help='Enables information-dense terminal output.')
 
@@ -84,7 +86,7 @@ def get_column_index(col_idx, col_name, header, ignore_case, delim):
 # main entry point function
 def cli(in_file, values, out_file,
         column_index, column_name, match, delimiter,
-        verbose, ignore_case, file_values):
+        verbose, ignore_case, file_values, no_header):
   ''' Filter lines in a file based on the values of a single column.\n
   Supports a variety of string matching functions.\n
   VALUES must be a file path (each value on a new line) or as a comma-separated
@@ -98,15 +100,19 @@ def cli(in_file, values, out_file,
 
   saved_lines = []
 
-  # use DOS line endings
-  if '\r' in header_line:
-    saved_lines.append(header + '\r\n')
-  # standard unix endings
-  else:
-    saved_lines.append(header + '\n')
+  # if --no-header, don't save the header
+  # otherwise save it
+  if not no_header:
+    # use DOS line endings
+    if '\r' in header_line:
+      saved_lines.append(header + '\r\n')
+    # standard unix endings
+    else:
+      saved_lines.append(header + '\n')
+
   # if header is default, but tab delimiter not found in header,
   # if the header has columns, assume it's a CSV
-  if '\t' not in header and ',' in header and delimiter == '\t':
+  if delimiter == '\t' and '\t' not in header and ',' in header:
     delimiter = ','
     if verbose:
       click.echo('Default delimiter TAB not found in header, using COMMA.')
