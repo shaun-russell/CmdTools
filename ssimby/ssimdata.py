@@ -27,12 +27,12 @@ class FlightLegRecord:
     self.dep_station = line[slicer(37, 39)]
     self.dep_pax_std = line[slicer(40, 43)]
     self.dep_sched_time = insert(line[slicer(44, 47)], ':', 2)
-    self.dep_utc_variation=line[slicer(48, 52)]
+    self.dep_utc_variation=line[slicer(48, 52)].strip()
     self.dep_pax_terminal=line[slicer(53, 54)]
     self.arr_station=line[slicer(55, 57)]
     self.arr_sched_time = insert(line[slicer(58, 61)], ':', 2)
     self.arr_pax_sta=line[slicer(62, 65)]
-    self.arr_utc_variation=line[slicer(66, 70)]
+    self.arr_utc_variation=line[slicer(66, 70)].strip()
     self.arr_pax_terminal=line[slicer(71, 72)]
     self.ac_type_iata=line[slicer(73, 75)]
     self.pax_rsvp_book_des=line[slicer(76, 95)]
@@ -58,11 +58,12 @@ class FlightLegRecord:
     # spare
     self.aircraft_config=line[slicer(173, 192)]
     self.date_var=line[slicer(193, 194)]
-    self.record_serial_num=line[slicer(195, 200)]
+    self.record_serial_num=line[slicer(195, 200)].strip()
 
-    self.local_date=''
-    self.utc_dep_date=''
-    self.utc_arr_date=''
+    self.arr_local_date=None
+    self.dep_local_date=None
+    self.utc_dep_date=None
+    self.utc_arr_date=None
 
     self.dep_latitude=''
     self.dep_longitude=''
@@ -74,7 +75,7 @@ class FlightLegRecord:
     self.arr_name=''
     self.arr_country=''
 
-  def export(self):
+  def export(self, eol='\n'):
     return '\t'.join([
       self.flight_des,
       self.leg_seq_num,
@@ -88,13 +89,16 @@ class FlightLegRecord:
       self.arr_utc_variation,
       self.ac_type_iata,
 
+      self.dep_local_date.strftime('%Y-%m-%d %H:%M'),
+      self.arr_local_date.strftime('%Y-%m-%d %H:%M'),
+      self.utc_dep_date.strftime('%Y-%m-%d %H:%M'),
+      self.utc_arr_date.strftime('%Y-%m-%d %H:%M'),
 
-
-      self.aircraft_config + '\n'
+      self.aircraft_config.strip() + eol
     ])
 
   @staticmethod
-  def header():
+  def header(eol):
     return '\t'.join([
       'flight_des',
       'leg_seq_num',
@@ -107,7 +111,14 @@ class FlightLegRecord:
       'arr_sched_time',
       'arr_utc_variation',
       'ac_type_iata',
-      'aircraft_config\n',
+
+      'dep_local_date',
+      'arr_local_date',
+      'utc_dep_date',
+      'utc_arr_date',
+
+
+      'aircraft_config' + eol,
     ])
 
 
@@ -125,22 +136,15 @@ def datestring_to_date(datestr):
   year=2000 + int(datestr[5:7])
   return datetime.date(day=day, month=month, year=year)
 
-def hour24_to_timedelta(hour24):
+def hour24_to_time(hour24):
   hours=int(hour24[:2])
   minutes=int(hour24[3:])
-  return datetime.timedelta(hours=hours, minutes=minutes)
+  return datetime.time(hours, minutes)
 
 def offset_utc(dt, offset):
   if offset == 0:
     return dt
-  elif offset > 0:
-    # positive
-    return dt + datetime.timedelta(hours=offset/100)
-  else:
-    # negative
-    return dt - datetime.timedelta(hours=-1*offset/100)
-
-  return None
+  return datetime.timedelta(hours=-1*offset/100) + dt
 
 
 def insert(source_str, insert_str, pos):

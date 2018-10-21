@@ -69,7 +69,20 @@ def filter(flights_file, airports_file, out_file,
 
   '''
 
-  saved_records = []
+  saved_lines = []
+
+  # parse the header for column indexes
+  header_line = flights_file.readline()
+
+  eol = '\n'
+  # if --no-header, don't save the header
+  # otherwise save it
+  if not no_header:
+    # use DOS line endings
+    if '\r' in header_line:
+      eol = '\r\n'
+    saved_lines.append(ssimdata.FlightLegRecord.header(eol))
+
   iata_airports = [x.strip() for x in airports_file.readlines()]
   
   start = ssimdata.datestring_to_date(start_date)
@@ -101,6 +114,7 @@ def filter(flights_file, airports_file, out_file,
     has_dates = False
     line_startdate = ssimdata.datestring_to_date(record.op_period[:7])
     line_enddate = ssimdata.datestring_to_date(record.op_period[7:])
+    print(record.op_period[:7], record.op_period[7:])
     if in_daterange(start, end, line_startdate, line_enddate):
       has_dates = True
     # skip if fails date requirements
@@ -109,22 +123,17 @@ def filter(flights_file, airports_file, out_file,
 
     # get the operating days of the flight
     active_days = [int(x) for x in record.op_days if x != ' ']
+    print(active_days)
 
     # time deltas
-    dep_timedelta = ssimdata.hour24_to_timedelta(record.dep_sched_time)
-    arr_timedelta = ssimdata.hour24_to_timedelta(record.arr_sched_time)
+    dep_time = ssimdata.hour24_to_time(record.dep_sched_time)
+    arr_time = ssimdata.hour24_to_time(record.arr_sched_time)
 
-    # utc offset time deltas
-    dep_utc = ssimdata.offset_utc(dep_timedelta, int(record.dep_utc_variation))
-    arr_utc = ssimdata.offset_utc(arr_timedelta, int(record.arr_utc_variation))
-
-    record.utc_dep_date = dep_utc
-    record.utc_arr_date = arr_utc
-
+    # i hate python datetime libraries so much
 
     # loop until past the end date
     current_date = start
-    while current_date.date <= end:
+    while current_date <= end:
       current_date = datetime.timedelta(days=1) + current_date
       # flight has not started yet at this date
       if current_date < line_startdate:
@@ -133,41 +142,25 @@ def filter(flights_file, airports_file, out_file,
       if current_date.isoweekday() not in active_days:
         continue
 
+      # utc offset time deltas
+      dep_utc = ssimdata.offset_utc(datetime.datetime.combine(current_date, dep_time), int(record.dep_utc_variation))
+      arr_utc = ssimdata.offset_utc(datetime.datetime.combine(current_date, arr_time), int(record.arr_utc_variation))
+
+      # duplicate and add the utc date
       active_record = copy.copy(record)
-      active_record.local_date = current_date
-      active_record.utc = current_date
+      active_record.dep_local_date = datetime.datetime.combine(current_date, dep_time)
+      active_record.arr_local_date = datetime.datetime.combine(current_date, arr_time)
+      # correct for overnight flights
+      if active_record.arr_local_date < active_record.dep_local_date:
+        active_record.arr_local_date += datetime.timedelta(days=1)
+      active_record.utc_dep_date = dep_utc
+      active_record.utc_arr_date = arr_utc
 
+      # save
+      saved_lines.append(active_record.export(eol))
+      lines_kept += 1
 
-    # save
-    saved_records.append(record)
-    lines_kept += 1
-
-
-    
-
-
-  # # parse the header for column indexes
-  # header_line = in_file.readline()
-  # header = header_line.strip()
-
-  # saved_lines = []
-
-  # # if --no-header, don't save the header
-  # # otherwise save it
-  # if not no_header:
-  #   # use DOS line endings
-  #   if '\r' in header_line:
-  #     saved_lines.append(header + '\r\n')
-  #   # standard unix endings
-  #   else:
-  #     saved_lines.append(header + '\n')
-
-
-  # # write the matched lines to the output file
-  # if verbose: click.echo('Saving...')
-  # for line in saved_lines:
-  #   out_file.write(line)
-  # out_file.close()
-
-  # # finished
-  # if verbose: click.echo('Saved')
+  # write the matched lines to the output file
+  for line in saved_lines:
+    out_file.write(line)
+  out_file.close()
