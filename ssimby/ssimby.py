@@ -62,6 +62,7 @@ def reduce(in_file, out_file):
               help='Only save records with both Arrival and Departure airports in provided list.')
 @click.option('--no-header', '-e', is_flag=True,
               help='Excludes the header from the output.')
+@click.version_option(version='1.0.0')
 
 def filter(flights_file, airports_file, out_file,
                   start_date, end_date, airport,
