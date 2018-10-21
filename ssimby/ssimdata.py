@@ -65,18 +65,11 @@ class FlightLegRecord:
     self.utc_dep_date=None
     self.utc_arr_date=None
 
-    self.dep_latitude=''
-    self.dep_longitude=''
-    self.dep_name=''
-    self.dep_country=''
-
-    self.arr_latitude=''
-    self.arr_longitude=''
-    self.arr_name=''
-    self.arr_country=''
+    self.dep_airport = None
+    self.arr_airport = None
 
   def export(self, eol='\n'):
-    return '\t'.join([
+    content = [
       self.flight_des,
       self.leg_seq_num,
       self.op_period,
@@ -93,13 +86,16 @@ class FlightLegRecord:
       self.arr_local_date.strftime('%Y-%m-%d %H:%M'),
       self.utc_dep_date.strftime('%Y-%m-%d %H:%M'),
       self.utc_arr_date.strftime('%Y-%m-%d %H:%M'),
+      self.aircraft_config.strip()]
 
-      self.aircraft_config.strip() + eol
-    ])
+    if self.dep_airport != None and self.arr_airport != None:
+      content += [self.dep_airport.export(), self.arr_airport.export()]
+
+    return '\t'.join(content) + eol
 
   @staticmethod
-  def header(eol):
-    return '\t'.join([
+  def header(eol, has_airports=False):
+    content = [
       'flight_des',
       'leg_seq_num',
       'op_period',
@@ -117,10 +113,65 @@ class FlightLegRecord:
       'utc_dep_date',
       'utc_arr_date',
 
+      'aircraft_config'
+    ]
+    if has_airports:
+      content.append(Airport.header('dep_'))
+      content.append(Airport.header('arr_'))
 
-      'aircraft_config' + eol,
+    return '\t'.join(content)[0]
+
+
+
+class Airport():
+  def __init__(self, line, hidx):
+    split_line = line.split('\t') if '\t' in line else line.split(',')
+
+    self.latitude = split_line[hidx['latitude']]
+    self.longitude = split_line[hidx['longitude']]
+    self.name = split_line[hidx['airport']]
+    self.country = split_line[hidx['country']]
+    self.iata = split_line[hidx['iata']]
+    self.icao = split_line[hidx['icao']]
+  
+  @staticmethod
+  def get_header_indices(header):
+    split_header = header.split('\t') if '\t' in header else header.split(',')
+    header_indices = {
+      'latitude': -1,
+      'longitude': -1,
+      'icao': -1,
+      'iata': -1,
+      'airport': -1,
+      'country': -1,
+    }
+    # get the locations of all columns that match the keys
+    for column in header_indices.keys():
+      for i,hcolumn in enumerate(split_header):
+        # match if the key is in the column header (case insensitive)
+        if column.lower() in hcolumn.lower():
+          header_indices[column] = i
+          break
+    return header_indices
+
+  def export(self):
+    return '\t'.join([
+      self.latitude,
+      self.longitude,
+      self.icao,
+      self.name,
+      self.country
     ])
 
+  @staticmethod
+  def header(prefix=''):
+    return '\t'.join([
+      prefix + 'latitude',
+      prefix + 'longitude',
+      prefix + 'icao',
+      prefix + 'airportname',
+      prefix + 'country'])
+        
 
 months = {
   'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4,
