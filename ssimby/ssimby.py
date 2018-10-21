@@ -26,10 +26,7 @@ def cli():
 
 # main entry point function
 def reduce(in_file, out_file):
-  ''' Filter lines in a file based on the values of a single column.\n
-  Supports a variety of string matching functions.\n
-  VALUES must be a file path (each value on a new line) or as a comma-separated
-  sequence of words.'''
+  ''' Reduce a raw SSIM file to only FlightLegRecords. '''
 
   exit()
   num_of_thousands = 0

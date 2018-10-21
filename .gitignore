@@ -103,3 +103,4 @@ venv.bak/
 # mypy
 .mypy_cache/
 test-files/sample-output.txt
+ssimby/samplefiles/ssim-example.ssimx
