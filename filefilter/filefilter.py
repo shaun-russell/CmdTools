@@ -139,10 +139,22 @@ def cli(in_file, values, out_file,
     # try find a match with every value
     if verbose: click.echo(columns)
     for value in match_values:
+      # skip if line is junk
+      if idx >= len(columns):
+        continue
       # use the specified function to find matches
-      if match_types[match](columns[idx], value):
-        saved_lines.append(line)
-        break
+      try:
+        if match_types[match](columns[idx], value):
+          saved_lines.append(line)
+          break
+      except Exception as ex:
+        # print debug information
+        click.echo('ERROR')
+        click.echo(ex)
+        click.echo(columns)
+        click.echo(idx)
+        click.echo(value)
+        exit()
   if verbose: click.echo('Saving...')
 
   # write the matched lines to the output file
