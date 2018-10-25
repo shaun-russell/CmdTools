@@ -139,7 +139,7 @@ def filter(flights_file, airports_file, out_file,
   for line in flights_file:
     # print progress
     line_count += 1
-    if line_count % 1000:
+    if line_count % 5000 == 0:
       click.echo('\rKept {} of {} lines.'.format(lines_kept, line_count), nl=False)
 
     record = ssimdata.FlightLegRecord(line)
