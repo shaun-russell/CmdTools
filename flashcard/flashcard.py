@@ -7,10 +7,16 @@ import random
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 class QAItem():
-  def __init__(self, string):
+  def __init__(self, string, ignore_case):
     stringsplit = string.split(',')
+
     self.question = stringsplit[0]
-    self.answer = stringsplit[1]
+
+    if ignore_case:
+      self.answers = stringsplit[1].lower().split(';')
+    else:
+      self.answers = stringsplit[1].split(';')
+
     if len(stringsplit) > 2:
       self.details = stringsplit[2]
     else:
@@ -21,9 +27,9 @@ def display_question(question):
   click.echo('QUESTION:')
   click.echo('  ' + question)
 
-def display_answer(answer, user_answer, details):
-  if answer != user_answer:
-    click.echo(click.style('  Incorrect. Answer was: {}'.format(answer), fg='white', bg='red'))
+def display_answer(answers, user_answer, details):
+  if user_answer not in answers:
+    click.echo(click.style('  Incorrect. Correct answers: {}'.format(', '.join(answers)), fg='white', bg='red'))
   else:
     click.echo(click.style('  Correct!', bg='green', fg='white'))
   click.echo(details)
@@ -41,7 +47,7 @@ def display_answer(answer, user_answer, details):
 
 # main entry point function
 def cli(in_file, ignore_case):
-  qas = [QAItem(x.strip()) for x in in_file.readlines()]
+  qas = [QAItem(x.strip(), ignore_case) for x in in_file.readlines()]
   while True:
     random.shuffle(qas)
 
@@ -51,9 +57,8 @@ def cli(in_file, ignore_case):
 
       if ignore_case:
         user_answer = user_answer.lower()
-        item.answer = item.answer.lower()
 
-      display_answer(item.answer, user_answer, item.details)
+      display_answer(item.answers, user_answer, item.details)
       input('\nContinue...')
     keep_going = input('No more questions. Replay? (y/n) ')
     if keep_going.lower().startswith('y'):
