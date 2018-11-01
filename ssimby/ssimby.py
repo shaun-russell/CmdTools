@@ -88,6 +88,7 @@ def filter(flights_file, airports_file, out_file,
     # use DOS line endings
     if '\r' in header_line:
       eol = '\r\n'
+    # HEADER NOT WORKING
     saved_lines.append(ssimdata.FlightLegRecord.header(eol, airports_enabled) + eol)
   
   # upper and lower date limits for flight records
