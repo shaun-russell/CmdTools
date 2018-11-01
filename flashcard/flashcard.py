@@ -47,7 +47,7 @@ def display_answer(answers, user_answer, details):
 
 # main entry point function
 def cli(in_file, ignore_case):
-  qas = [QAItem(x.strip(), ignore_case) for x in in_file.readlines()]
+  qas = [QAItem(x.strip(), ignore_case) for x in in_file.readlines() if len(x) > 3]
   while True:
     random.shuffle(qas)
 
