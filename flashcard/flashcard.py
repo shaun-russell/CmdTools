@@ -32,12 +32,14 @@ def display_answer(answers, user_answer, details):
     click.echo(click.style('  Incorrect. Correct answers: {}'.format(', '.join(answers)), fg='white', bg='red'))
   else:
     click.echo(click.style('  Correct!', bg='green', fg='white'))
+    if len(answers) > 1:
+      click.echo('Could also be: {}'.format(', '.join(answers)))
   click.echo(details)
 
 # START CLI COMMANDS
 @click.command(context_settings=CONTEXT_SETTINGS)
 # required arguments
-@click.argument('in-file', type=click.File('r'), required=True)
+@click.argument('in-file', type=click.File('r', encoding='utf8'), required=True)
 
 # optional arguments
 @click.option('--ignore-case', '-i', is_flag=True,
@@ -63,7 +65,7 @@ def cli(in_file, ignore_case):
         user_answer = user_answer.lower()
 
       display_answer(item.answers, user_answer, item.details)
-      input('\nContinue...')
+      input('Continue...')
     keep_going = input('No more questions. Replay? (y/n) ')
     if keep_going.lower().startswith('y'):
       continue
