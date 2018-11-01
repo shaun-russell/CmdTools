@@ -19,13 +19,13 @@ class QAItem():
 def display_question(question):
   click.clear()
   click.echo('QUESTION:')
-  click.echo(question)
+  click.echo('  ' + question)
 
 def display_answer(answer, user_answer, details):
-  color = 'green' if answer == user_answer else 'white'
-  click.echo(click.style(user_answer, fg=color))
   if answer != user_answer:
-    click.echo('Correct answer: {}'.format(answer))
+    click.echo(click.style('  Incorrect. Answer was: {}'.format(answer), fg='white', bg='red'))
+  else:
+    click.echo(click.style('  Correct!', bg='green', fg='white'))
   click.echo(details)
 
 # START CLI COMMANDS
@@ -45,17 +45,17 @@ def cli(in_file, ignore_case):
   while True:
     random.shuffle(qas)
 
-    for item in shuffley:
+    for item in qas:
       display_question(item.question)
-      user_answer = input('> ')
+      user_answer = input('  > ')
 
       if ignore_case:
         user_answer = user_answer.lower()
         item.answer = item.answer.lower()
 
       display_answer(item.answer, user_answer, item.details)
-      input('Press any key to continue...')
-    keep_going = input('Finished. Replay? (y/n) ')
+      input('\nContinue...')
+    keep_going = input('No more questions. Replay? (y/n) ')
     if keep_going.lower().startswith('y'):
       continue
     else:
