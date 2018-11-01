@@ -50,10 +50,12 @@ def display_answer(answers, user_answer, details):
 # main entry point function
 def cli(in_file, ignore_case):
   qas = []
+  incorrect = []
   for line in in_file:
     if len(line) < 4 or line.startswith('%'):
       continue
     qas.append(QAItem(line.strip(), ignore_case))
+  qaslen = len(qas)
   while True:
     random.shuffle(qas)
 
@@ -65,7 +67,16 @@ def cli(in_file, ignore_case):
         user_answer = user_answer.lower()
 
       display_answer(item.answers, user_answer, item.details)
+      if user_answer not in item.answers:
+        incorrect.append(item)
       input('Continue...')
+    
+    print('Score: {}/{}'.format(qaslen - len(incorrect), qaslen))
+    if len(incorrect) > 0:
+      for qa in incorrect:
+        print('{} = {}'.format(qa.question, ', '.join(qa.answers)))
+  
+    incorrect = []
     keep_going = input('No more questions. Replay? (y/n) ')
     if keep_going.lower().startswith('y'):
       continue
