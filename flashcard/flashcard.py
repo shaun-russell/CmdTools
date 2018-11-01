@@ -47,7 +47,11 @@ def display_answer(answers, user_answer, details):
 
 # main entry point function
 def cli(in_file, ignore_case):
-  qas = [QAItem(x.strip(), ignore_case) for x in in_file.readlines() if len(x) > 3 or x.startswith('%')]
+  qas = []
+  for line in in_file:
+    if len(line) < 4 or line.startswith('%'):
+      continue
+    qas.append(QAItem(line.strip(), ignore_case))
   while True:
     random.shuffle(qas)
 
