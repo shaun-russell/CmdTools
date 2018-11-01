@@ -43,7 +43,7 @@ def display_answer(answer, user_answer, details):
 def cli(in_file, ignore_case):
   qas = [QAItem(x.strip()) for x in in_file.readlines()]
   while True:
-    shuffley = random.shuffle(qas)
+    random.shuffle(qas)
 
     for item in shuffley:
       display_question(item.question)
